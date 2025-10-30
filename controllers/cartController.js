@@ -63,25 +63,30 @@ module.exports = {
   },
 
   // 🛒 جلب كل عناصر السلة
-  getCart: async (req, res) => {
-    const userId = req.user.id;
+ getCart: async (req, res) => {
+  const userId = req.user.id;
 
-    try {
-      const cart = await Cart.find({ userId })
-        .populate({
-          path: 'productId',
-          select: 'imageUrl title restaurant rating ratingCount',
-          populate: {
-            path: 'restaurant',
-            select: 'time coords'
-          }
-        });
+  try {
+    const cart = await Cart.findOne({ userId })
+      .populate({
+        path: 'items.productId', // ⚡️ ضع هنا path صحيح
+        select: 'imageUrl title restaurant rating ratingCount',
+        populate: {
+          path: 'restaurant',
+          select: 'time coords'
+        }
+      });
 
-      res.status(200).json(cart);
-    } catch (error) {
-      res.status(500).json({ status: false, message: error.message });
+    if (!cart) {
+      return res.status(200).json({ items: [], totalPrice: 0, quantity: 0 });
     }
-  },
+
+    res.status(200).json(cart);
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+}
+,
 
   // 🔢 عدد عناصر السلة
   getCartCount: async (req, res) => {

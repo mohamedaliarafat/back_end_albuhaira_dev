@@ -1,14 +1,17 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const AddressSchema = new mongoose.Schema({
-  userId: { type: String, required: true },
-  addressLine1: { type: String, required: true }, // تصحيح الاسم
-  city: { type: String, required: false },
-  postalCode: { type: String, required: true },
-  isDefault: { type: Boolean, default: false }, // تغيير الاسم من "default"
-  deliveryInstructions: { type: String, required: false },
-  latitude: { type: Number, required: false },
-  longitude: { type: Number, required: false },
-}, { timestamps: true }); // يضيف createdAt و updatedAt تلقائياً
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  addressLine1: { type: String, default: '' },
+  city: { type: String, default: '' },
+  district: { type: String, default: '' },
+  state: { type: String, default: '' },
+  country: { type: String, default: '' },
+  postalCode: { type: String, default: '' },
+  isDefault: { type: Boolean, default: false },
+  deliveryInstructions: { type: String, default: '' },
+  latitude: { type: Number, default: 0 },
+  longitude: { type: Number, default: 0 },
+}, { timestamps: true });
 
-module.exports = mongoose.model("Address", AddressSchema);
+module.exports = mongoose.model('Address', AddressSchema);

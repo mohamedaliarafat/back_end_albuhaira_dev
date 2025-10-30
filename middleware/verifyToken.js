@@ -29,7 +29,8 @@ const verifyTokenAndAuthorization = (req, res, next) => {
         } else {
             return res.status(401).json({ status: false, message: "You are not allowed to access this route" });
         }
-    });
+    }
+);
 };
 
 const verifyVendor = (req, res, next) => {

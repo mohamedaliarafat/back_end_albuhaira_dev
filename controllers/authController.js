@@ -79,17 +79,16 @@ module.exports = {
 
       // ✅ إنشاء التوكن بشكل صحيح
       const userToken = jwt.sign(
-        
-        {
-          
-          id: user._id,
-          userType: user.userType,
-          email: user.email,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "21d" }
-        
-      );
+  {
+    id: user._id,
+    name: user.username, // ✅ أضف الاسم
+    userType: user.userType,
+    email: user.email,
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: "21d" }
+);
+
 
       // ✅ إرجاع البيانات بدون كلمة السر أو otp
       const { password,createdAt,updatedAt, __v, otp, ...others } = user._doc;
