@@ -7,13 +7,13 @@ const {
   getAllOrders,
 } = require("../controllers/orderController");
 
-const { verifyTokenAndAuthorization, verifyAdmin } = require("../middleware/verifyToken");
+const { verifyPhone, verifyClient, verifyAdmin } = require("../middleware/verifyToken");
 
 // 🟢 إنشاء طلب جديد
-router.post("/", verifyTokenAndAuthorization, createOrder);
+router.post("/", verifyPhone, verifyClient, verifyAdmin, createOrder);
 
 // 🔵 جلب جميع طلبات مستخدم محدد
-router.get("/user/:userId", verifyTokenAndAuthorization, getUserOrders);
+router.get("/user/:userId", verifyPhone, verifyClient, verifyAdmin, getUserOrders);
 
 // 🟠 تحديث حالة الطلب (Admin فقط)
 router.put("/:id/status", verifyAdmin, updateOrderStatus);

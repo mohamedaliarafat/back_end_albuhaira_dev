@@ -6,8 +6,8 @@ const CategoryRoutes = require("./routes/category");
 const RestaurantRoutes= require("./routes/restaurant");
 const FoodRoutes= require("./routes/foods");
 const RatingRoutes= require("./routes/rating");
-const AuthRoutes= require("./routes/auth");
-const UserRoutes= require("./routes/user");
+// const AuthRoutes= require("./routes/auth");
+// const userRoute = require('./routes/user');
 const AddressRoutes= require("./routes/address");
 const CartRoutes= require("./routes/cart");
 const OrderRoutes= require("./routes/order");
@@ -36,8 +36,8 @@ mongoose.connect(process.env.MONGOURL)
 
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
-app.use("/", AuthRoutes);
-app.use("/api/users", UserRoutes);
+// app.use("/", UserPhRoutes);
+// app.use("/api/users", userRoute);
 app.use("/api/category", CategoryRoutes);
 app.use("/api/restaurant", RestaurantRoutes);
 app.use("/api/foods", FoodRoutes);

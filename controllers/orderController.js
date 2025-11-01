@@ -1,123 +1,37 @@
-const path = require("path");
-const fs = require("fs");
-const Payment = require(path.join(__dirname, "../models/Payment"));
-const Order = require(path.join(__dirname, "../models/Order"));
-const { verifyTokenAndAuthorization, verifyAdmin } = require("../middleware/verifyToken");
+const mongoose = require('mongoose');
 
-// =======================
-// Multer – إعداد التخزين
-// =======================
-const multer = require("multer");
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, "../uploads/");
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${file.originalname}`;
-    cb(null, uniqueName);
-  },
+const orderItemSchema = new mongoose.Schema({
+    foodId: { type: mongoose.Schema.Types.ObjectId, ref: 'Food' },
+    quantity: { type: Number, default: 1 },
+    price: { type: Number, required: true },
+    additives: { type: Array, default: [] },
+    instructions: { type: String, default: "" }
 });
 
-const upload = multer({ storage });
+const OrderSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    orderItems: { type: [orderItemSchema], default: [] },
+    orderTotal: { type: Number, default: 0 },
+    deliveryFee: { type: Number, default: 0 },
+    grandTotal: { type: Number, default: 0 },
+    deliveryAddress: { type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: false },
+    restaurantAddress: { type: String, default: "" },
+    paymentMethod: { type: String, default: "Bank Transfer" },
+    paymentStatus: { type: String, default: 'Pending', enum: ['Pending', 'Completed', 'Failed'] },
+    orderStatus: { 
+  type: String, 
+  default: 'In-Review', // بدل 'Pending' بعد الدفع
+  enum: ['In-Review', 'Placed', 'Accepted', 'Preparing', 'Delivered', 'Cancelled', 'Ready', 'Out_for_Delivery'] 
+},
+    restaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: false },
+    restaurantCoords: { type: [Number], default: [] },
+    recipintCoords: { type: [Number], default: [] },
+    delivreId: { type: String, default: "" },
+    rating: { type: Number, min: 1, max: 5, default: 3 },
+    feedback: { type: String, default: "" },
+    promoCode: { type: String, default: "" },
+    discountAmount: { type: Number, default: 0 },
+    notes: { type: String, default: "" },
+}, { timestamps: true });
 
-// =======================
-// إنشاء عملية دفع جديدة + إنشاء طلب مرتبط
-// =======================
-const createPayment = async (req, res) => {
-  try {
-    const { totalAmount, currency, bank, iban, deliveryAddress, restaurantAddress } = req.body;
-    const receiptFile = req.file ? req.file.filename : null;
-
-    // حفظ الدفع
-    const newPayment = new Payment({
-      userId: req.user.id,
-      totalAmount,
-      currency: currency || "SAR",
-      bank: bank || "Bank Transfer",
-      iban: iban || "",
-      status: "pending",
-      receiptFile,
-    });
-
-    await newPayment.save();
-
-    // إنشاء طلب مرتبط بعد الدفع
-    const newOrder = new Order({
-      userId: req.user.id,
-      orderItems: [], // يمكن ملؤها لاحقًا حسب اختيار المستخدم
-      orderTotal: totalAmount,
-      deliveryFee: 0,
-      grandTotal: totalAmount,
-      deliveryAddress: deliveryAddress || null,
-      restaurantAddress: restaurantAddress || "Default Restaurant Address",
-      paymentMethod: bank || "Bank Transfer",
-      paymentStatus: "Pending",
-      orderStatus: "In-Review", // الطلب قيد المراجعة
-    });
-
-    await newOrder.save();
-
-    res.status(201).json({
-      message: "تم إرسال الدفع وإنشاء الطلب بنجاح. الطلب قيد المراجعة.",
-      payment: newPayment,
-      order: newOrder,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// =======================
-// عرض جميع المدفوعات (Admin)
-// =======================
-const getAllPayments = async (req, res) => {
-  try {
-    const payments = await Payment.find().populate("userId", "userName");
-    res.json(payments);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// =======================
-// عرض مدفوعات مستخدم محدد
-// =======================
-const getUserPayments = async (req, res) => {
-  try {
-    const payments = await Payment.find({ userId: req.params.userId });
-    res.json(payments);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// =======================
-// تحديث حالة الدفع (Admin)
-// =======================
-const updatePaymentStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const updated = await Payment.findByIdAndUpdate(
-      req.params.id,
-      { status: status.toLowerCase() },
-      { new: true }
-    );
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-module.exports = {
-  upload,
-  createPayment,
-  getAllPayments,
-  getUserPayments,
-  updatePaymentStatus,
-};
+module.exports = mongoose.model('Order', OrderSchema);

@@ -1,19 +1,12 @@
-
 const router = require('express').Router();
 const cartController = require('../controllers/cartController');
-const {verifyTokenAndAuthorization} = require('../middleware/verifyToken');
+const { verifyPhone, verifyClient } = require('../middleware/verifyToken');
 
-
-router.post("/",verifyTokenAndAuthorization,cartController.addProductToCart);
-
-
-router.get("/decrement/:id",verifyTokenAndAuthorization, cartController.decrementProductQty);
-
-router.delete("/:id",verifyTokenAndAuthorization, cartController.removeCartItem);
-
-router.get("/",verifyTokenAndAuthorization, cartController.getCart);
-
-router.get("/count",verifyTokenAndAuthorization, cartController.getCartCount);
-
+// ✅ المستخدم المسجل برقم الجوال فقط
+router.post("/", verifyPhone, verifyClient, cartController.addProductToCart);
+router.patch("/decrement/:id", verifyPhone, verifyClient, cartController.decrementProductQty);
+router.delete("/:id", verifyPhone, verifyClient, cartController.removeCartItem);
+router.get("/", verifyPhone, verifyClient, cartController.getCart);
+router.get("/count", verifyPhone, verifyClient, cartController.getCartCount);
 
 module.exports = router;

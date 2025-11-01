@@ -1,13 +1,13 @@
 
 const router = require('express').Router();
 const ratingController = require('../controllers/ratingController');
-const {verifyTokenAndAuthorization} = require('../middleware/verifyToken');
+const { verifyPhone, verifyClient } = require('../middleware/verifyToken');
 
 
-router.post("/",verifyTokenAndAuthorization,ratingController.addRating);
+router.post("/",verifyPhone, verifyClient ,ratingController.addRating);
 
 
-router.get("/",verifyTokenAndAuthorization, ratingController.checkUserRating);
+router.get("/",verifyPhone, verifyClient , ratingController.checkUserRating);
 
 
 module.exports = router;

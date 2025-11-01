@@ -5,10 +5,7 @@ const fs = require("fs");
 const Payment = require(path.join(__dirname, "../models/Payment"));
 const Order = require(path.join(__dirname, "../models/Order")); // نموذج الطلب
 
-const {
-  verifyTokenAndAuthorization,
-  verifyAdmin,
-} = require("../middleware/verifyToken");
+const { verifyPhone, verifyClient, verifyAdmin } = require('../middleware/verifyToken');
 
 const router = express.Router();
 
@@ -37,7 +34,7 @@ const upload = multer({ storage });
 // =======================
 router.post(
   "/",
-  verifyTokenAndAuthorization,
+  verifyPhone, verifyClient,
   upload.single("receiptFile"),
   async (req, res) => {
     try {
@@ -93,7 +90,7 @@ router.get("/", verifyAdmin, async (req, res) => {
 // =======================
 // عرض مدفوعات مستخدم واحد
 // =======================
-router.get("/user/:userId", verifyTokenAndAuthorization, async (req, res) => {
+router.get("/user/:userId", verifyPhone, async (req, res) => {
   try {
     const payments = await Payment.find({ userId: req.params.userId });
     res.json(payments);

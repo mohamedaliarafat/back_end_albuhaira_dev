@@ -1,130 +1,224 @@
-const mongoose = require('mongoose');
+// const Cart = require('../models/Cart');
+// const Food = require('../models/Food');
+
+// module.exports = {
+//   addProductToCart: async (req, res) => {
+//     const userId = req.user.id;
+//     const { productId, quantity, totalPrice, additives } = req.body;
+
+//     try {
+//       if (!productId) return res.status(400).json({ status: false, message: "معرّف المنتج مفقود" });
+
+//       const product = await Food.findById(productId);
+//       if (!product) return res.status(400).json({ status: false, message: "المنتج غير موجود" });
+
+//       let cart = await Cart.findOne({ userId });
+//       if (!cart) cart = new Cart({ userId, items: [] });
+
+//       const existingItem = cart.items.find(i => i.productId.toString() === productId);
+//       if (existingItem) {
+//         existingItem.quantity += quantity;
+//         existingItem.totalPrice += totalPrice;
+//       } else {
+//         cart.items.push({ productId, quantity, totalPrice, additives, title: product.title, imageUrl: product.imageUrl, restaurant: product.restaurant });
+//       }
+
+//       await cart.save();
+//       res.status(200).json({ status: true, count: cart.items.length });
+//     } catch (err) {
+//       res.status(500).json({ status: false, message: err.message });
+//     }
+//   },
+
+//   removeCartItem: async (req, res) => {
+//     const userId = req.user.id;
+//     const cartItemId = req.params.id;
+
+//     try {
+//       const cart = await Cart.findOne({ userId });
+//       if (!cart) return res.status(404).json({ status: false, message: "السلة غير موجودة" });
+
+//       cart.items = cart.items.filter(i => i._id.toString() !== cartItemId);
+//       await cart.save();
+
+//       res.status(200).json({ status: true, message: "تم حذف العنصر", count: cart.items.length });
+//     } catch (err) {
+//       res.status(500).json({ status: false, message: err.message });
+//     }
+//   },
+
+//   getCart: async (req, res) => {
+//     const userId = req.user.id;
+//     try {
+//       const cart = await Cart.findOne({ userId }).populate({
+//         path: 'items.productId',
+//         select: 'title imageUrl restaurant rating ratingCount',
+//         populate: { path: 'restaurant', select: 'time coords' }
+//       });
+
+//       if (!cart) return res.status(200).json({ items: [], totalPrice: 0, quantity: 0 });
+
+//       res.status(200).json(cart);
+//     } catch (err) {
+//       res.status(500).json({ status: false, message: err.message });
+//     }
+//   },
+
+//   getCartCount: async (req, res) => {
+//     const userId = req.user.id;
+//     try {
+//       const cart = await Cart.findOne({ userId });
+//       const count = cart ? cart.items.length : 0;
+//       res.status(200).json({ status: true, count });
+//     } catch (err) {
+//       res.status(500).json({ status: false, message: err.message });
+//     }
+//   },
+
+//   decrementProductQty: async (req, res) => {
+//     const userId = req.user.id;
+//     const cartItemId = req.params.id;
+
+//     try {
+//       const cart = await Cart.findOne({ userId });
+//       if (!cart) return res.status(404).json({ status: false, message: "السلة غير موجودة" });
+
+//       const item = cart.items.find(i => i._id.toString() === cartItemId);
+//       if (!item) return res.status(404).json({ status: false, message: "العنصر غير موجود" });
+
+//       const pricePerUnit = item.totalPrice / item.quantity;
+//       if (item.quantity > 1) {
+//         item.quantity -= 1;
+//         item.totalPrice -= pricePerUnit;
+//       } else {
+//         cart.items = cart.items.filter(i => i._id.toString() !== cartItemId);
+//       }
+
+//       await cart.save();
+//       res.status(200).json({ status: true, message: "تم تعديل الكمية", count: cart.items.length });
+//     } catch (err) {
+//       res.status(500).json({ status: false, message: err.message });
+//     }
+//   }
+// };
 const Cart = require('../models/Cart');
-const Food = require('../models/Food'); // تأكد أن اسم الملف مطابق للـ model
+const Food = require('../models/Food');
 
 module.exports = {
-  // ✅ إضافة منتج للسلة
-   addProductToCart: async (req, res) => {
+  // 🟢 إضافة منتج للسلة
+  addProductToCart: async (req, res) => {
     const userId = req.user.id;
-    const { productId, totalPrice, quantity, additives } = req.body;
+    const { productId, quantity = 1, totalPrice, additives = [] } = req.body;
 
     try {
-      // ✅ تحقق من أن المنتج فعلاً موجود
-      const product = await Food.findById(productId);
-      if (!product) {
-        return res.status(400).json({ status: false, message: "المنتج غير موجود في قاعدة البيانات" });
-      }
+      if (!productId) return res.status(400).json({ status: false, message: "معرّف المنتج مفقود" });
 
-      // ✅ تأكد أن productId وصل فعلاً
-      if (!productId) {
-        return res.status(400).json({ status: false, message: "معرّف المنتج productId مفقود" });
-      }
+      const product = await Food.findById(productId).populate("restaurant", "name time coords");
+      if (!product) return res.status(404).json({ status: false, message: "المنتج غير موجود" });
 
-      // ✅ بحث عن نفس المنتج في السلة
-      const existingProduct = await Cart.findOne({ userId, productId });
-      let count;
+      let cart = await Cart.findOne({ userId });
+      if (!cart) cart = new Cart({ userId, items: [] });
 
-      if (existingProduct) {
-        existingProduct.totalPrice += totalPrice;
-        existingProduct.quantity += quantity;
-        await existingProduct.save();
+      const existingItem = cart.items.find(i => i.productId.toString() === productId);
+      const price = product.price || 0;
+
+      if (existingItem) {
+        existingItem.quantity += quantity;
+        existingItem.totalPrice = existingItem.quantity * price;
       } else {
-        const newCartItem = new Cart({
-          userId,
+        cart.items.push({
           productId,
-          totalPrice,
+          title: product.title,
+          imageUrl: product.imageUrl,
+          restaurant: product.restaurant,
+          additives,
+          price,
           quantity,
-          additives
+          totalPrice: price * quantity,
         });
-        await newCartItem.save();
       }
 
-      count = await Cart.countDocuments({ userId });
-      return res.status(200).json({ status: true, count });
-
-    } catch (error) {
-      res.status(500).json({ status: false, message: error.message });
+      await cart.save();
+      res.status(200).json({ status: true, message: "تم تحديث السلة", cart });
+    } catch (err) {
+      res.status(500).json({ status: false, message: err.message });
     }
   },
 
-  // 🗑️ حذف عنصر من السلة
+  // 🔵 حذف عنصر من السلة
   removeCartItem: async (req, res) => {
-    const cartItemId = req.params.id;
     const userId = req.user.id;
+    const cartItemId = req.params.id;
 
     try {
-      await Cart.findByIdAndDelete({ _id: cartItemId });
-      const count = await Cart.countDocuments({ userId });
+      const cart = await Cart.findOne({ userId });
+      if (!cart) return res.status(404).json({ status: false, message: "السلة غير موجودة" });
 
-      res.status(200).json({ status: true, message: "Item removed from cart", count });
-    } catch (error) {
-      res.status(500).json({ status: false, message: error.message });
+      cart.items = cart.items.filter(i => i._id.toString() !== cartItemId);
+      await cart.save();
+
+      res.status(200).json({ status: true, message: "تم حذف العنصر", cart });
+    } catch (err) {
+      res.status(500).json({ status: false, message: err.message });
     }
   },
 
-  // 🛒 جلب كل عناصر السلة
- getCart: async (req, res) => {
-  const userId = req.user.id;
+  // 🟣 تقليل كمية منتج واحد
+  decrementProductQty: async (req, res) => {
+    const userId = req.user.id;
+    const cartItemId = req.params.id;
 
-  try {
-    const cart = await Cart.findOne({ userId })
-      .populate({
-        path: 'items.productId', // ⚡️ ضع هنا path صحيح
-        select: 'imageUrl title restaurant rating ratingCount',
-        populate: {
-          path: 'restaurant',
-          select: 'time coords'
-        }
-      });
+    try {
+      const cart = await Cart.findOne({ userId });
+      if (!cart) return res.status(404).json({ status: false, message: "السلة غير موجودة" });
 
-    if (!cart) {
-      return res.status(200).json({ items: [], totalPrice: 0, quantity: 0 });
+      const item = cart.items.find(i => i._id.toString() === cartItemId);
+      if (!item) return res.status(404).json({ status: false, message: "العنصر غير موجود" });
+
+      const pricePerUnit = item.totalPrice / item.quantity;
+
+      if (item.quantity > 1) {
+        item.quantity -= 1;
+        item.totalPrice -= pricePerUnit;
+      } else {
+        cart.items = cart.items.filter(i => i._id.toString() !== cartItemId);
+      }
+
+      await cart.save();
+      res.status(200).json({ status: true, message: "تم تعديل الكمية", cart });
+    } catch (err) {
+      res.status(500).json({ status: false, message: err.message });
     }
+  },
 
-    res.status(200).json(cart);
-  } catch (error) {
-    res.status(500).json({ status: false, message: error.message });
-  }
-}
-,
+  // 🟤 عرض السلة الحالية
+  getCart: async (req, res) => {
+    const userId = req.user.id;
+    try {
+      const cart = await Cart.findOne({ userId })
+        .populate({
+          path: 'items.productId',
+          select: 'title imageUrl restaurant price',
+          populate: { path: 'restaurant', select: 'name time coords' }
+        });
 
-  // 🔢 عدد عناصر السلة
+      if (!cart) return res.status(200).json({ items: [], totalPrice: 0, quantity: 0 });
+
+      res.status(200).json({ status: true, cart });
+    } catch (err) {
+      res.status(500).json({ status: false, message: err.message });
+    }
+  },
+
+  // ⚫ عدد المنتجات في السلة
   getCartCount: async (req, res) => {
     const userId = req.user.id;
     try {
-      const count = await Cart.countDocuments({ userId });
+      const cart = await Cart.findOne({ userId });
+      const count = cart ? cart.items.length : 0;
       res.status(200).json({ status: true, count });
-    } catch (error) {
-      res.status(500).json({ status: false, message: error.message });
+    } catch (err) {
+      res.status(500).json({ status: false, message: err.message });
     }
   },
-
-  // ➖ تقليل كمية منتج
-  decrementProductQty: async (req, res) => {
-    const userId = req.user.id;
-    const id = req.params.id;
-
-    try {
-      const cartItem = await Cart.findById(id);
-
-      if (!cartItem) {
-        return res.status(404).json({ status: false, message: "Cart item not found" });
-      }
-
-      const productPrice = cartItem.totalPrice / cartItem.quantity;
-
-      if (cartItem.quantity > 1) {
-        cartItem.quantity -= 1;
-        cartItem.totalPrice -= productPrice;
-        await cartItem.save();
-
-        res.status(200).json({ status: true, message: "Product quantity decremented" });
-      } else {
-        await Cart.findByIdAndDelete({ _id: id });
-        res.status(200).json({ status: true, message: "Product removed from cart" });
-      }
-    } catch (error) {
-      res.status(500).json({ status: false, message: error.message });
-    }
-  }
 };
