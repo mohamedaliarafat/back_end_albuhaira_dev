@@ -43,6 +43,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 🔹 المسارات
+
+app.use("/api/admin", adminRoutes);
 app.use("/api/category", CategoryRoutes);
 app.use("/api/restaurant", RestaurantRoutes);
 app.use("/api/foods", FoodRoutes);
@@ -56,7 +58,7 @@ app.use("/api/company-profile", completeProfileRoutes);
 app.use("/api/petrol", PetrolRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminFirebaseRoute);
-app.use("/api/admin", adminRoutes);
+
 
 // ✅ اختبار سريع
 app.get("/", (req, res) => {
