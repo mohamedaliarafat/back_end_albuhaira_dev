@@ -1,3 +1,4 @@
+// routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -14,7 +15,21 @@ const {
   getAllCompleteProfiles 
 } = require('../controllers/profileController');
 
-const upload = multer({ dest: 'uploads/' });
+const { verifyPhone, verifyAdmin } = require('../middleware/verifyToken');
+
+// ===============================
+// 🔹 إعدادات multer لرفع الملفات
+// ===============================
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // مجلد رفع الملفات
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 // ===============================
 // 📱 تسجيل الدخول والتحقق عبر OTP
@@ -25,14 +40,15 @@ router.post("/verify-otp", verifyOtpAndLogin);
 // ===============================
 // 🏠 إدارة العناوين
 // ===============================
-router.post("/add-address", addAddress);
-router.get("/addresses/:userId", getUserAddresses);
+router.post("/add-address", verifyPhone, addAddress);
+router.get("/addresses/:userId", verifyPhone, getUserAddresses);
 
 // ===============================
 // 📝 رفع الملفات وإكمال الملف الشخصي
 // ===============================
 router.post(
   '/complete-profile',
+  verifyPhone,
   upload.fields([
     { name: 'licenseBusiness', maxCount: 1 },
     { name: 'licenseEnergy', maxCount: 1 },
@@ -47,8 +63,7 @@ router.post(
 // ===============================
 // 🛡️ صلاحيات الأدمن
 // ===============================
-
 // جلب كل ملفات CompleteProfile مع بيانات المستخدم
-router.get("/admin/complete-profiles", getAllCompleteProfiles);
+router.get("/admin/complete-profiles", verifyPhone, verifyAdmin, getAllCompleteProfiles);
 
 module.exports = router;

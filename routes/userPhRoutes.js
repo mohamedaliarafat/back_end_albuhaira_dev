@@ -6,6 +6,7 @@ const {
   addAddress,
   getUserAddresses,
   getAllUsers,
+  getAllUsersWithProfile, // ← أضفنا هذه الدالة الجديدة
   toggleUserStatus,
   deleteUser,
   getUserNotifications,
@@ -47,7 +48,7 @@ router.delete("/notifications/:notificationId", deleteNotification);
 router.get("/admin/users", verifyAdmin, getAllUsers);
 
 // 👑 جلب جميع المستخدمين مع كل بيانات الملف الشخصي والعناوين والكارت
-
+router.get("/admin/users-with-profile", verifyAdmin, getAllUsersWithProfile);
 
 // 🔒 تفعيل / تعطيل مستخدم (حظر)
 router.put("/admin/user/:userId/toggle", verifyAdmin, toggleUserStatus);
