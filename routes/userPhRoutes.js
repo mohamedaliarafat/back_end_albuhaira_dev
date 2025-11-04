@@ -1,17 +1,54 @@
 const express = require("express");
 const router = express.Router();
-const { requestOtp, verifyOtpAndLogin, addAddress, getUserAddresses } = require("../controllers/userPhController");
+const {
+  requestOtp,
+  verifyOtpAndLogin,
+  addAddress,
+  getUserAddresses,
+  getAllUsers,
+  toggleUserStatus,
+  deleteUser,
+  getUserNotifications,
+  markNotificationAsRead,
+  deleteNotification,
+} = require("../controllers/userPhController");
 
-// 🔹 إرسال رمز التحقق
+// ===============================
+// 📱 تسجيل الدخول والتحقق عبر OTP
+// ===============================
 router.post("/request-otp", requestOtp);
-
-// 🔹 التحقق من الرمز وتسجيل الدخول
 router.post("/verify-otp", verifyOtpAndLogin);
 
-// 🔹 إضافة عنوان للمستخدم
+// ===============================
+// 🏠 إدارة العناوين
+// ===============================
 router.post("/add-address", addAddress);
-
-// 🔹 جلب عناوين المستخدم
 router.get("/addresses/:userId", getUserAddresses);
+
+// ===============================
+// 🔔 نظام الإشعارات
+// ===============================
+
+// 📬 جلب إشعارات المستخدم
+router.get("/notifications/:userId", getUserNotifications);
+
+// ✅ تعليم الإشعار كمقروء
+router.put("/notifications/read/:notificationId", markNotificationAsRead);
+
+// ❌ حذف إشعار
+router.delete("/notifications/:notificationId", deleteNotification);
+
+// ===============================
+// 🛡️ صلاحيات الأدمن
+// ===============================
+
+// 👥 جلب جميع المستخدمين (Dashboard)
+router.get("/admin/users", getAllUsers);
+
+// 🔒 تفعيل / تعطيل مستخدم (حظر)
+router.put("/admin/user/:userId/toggle", toggleUserStatus);
+
+// 🗑️ حذف مستخدم
+router.delete("/admin/user/:userId", deleteUser);
 
 module.exports = router;

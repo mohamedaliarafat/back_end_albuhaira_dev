@@ -13,6 +13,9 @@ const CartRoutes= require("./routes/cart");
 const OrderRoutes= require("./routes/order");
 const paymentRoutes = require("./routes/paymentRoutes");
 const UserPhRoutes = require("./routes/userPhRoutes");
+const completeProfileRoutes = require('./routes/completeProfile');
+const PetrolRoutes = require('./routes/petrol');
+const notificationRoutes = require('./routes/notifications');
 
 
 // const sendEmail = require('./utils/smtp_functiopm,n');
@@ -47,6 +50,10 @@ app.use("/api/cart", CartRoutes);
 app.use("/api/orders", OrderRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use('/api/auth', UserPhRoutes);
+app.use('/api/company-profile', completeProfileRoutes);
+app.use('/api/petrol', PetrolRoutes);
+app.use('/api/notifications', notificationRoutes);
+
 
 
 app.listen(process.env.PORT || 6013, () => console.log(`Albuhaira Backend is running on  ${process.env.PORT}!`))
