@@ -250,9 +250,6 @@ exports.getUserAddresses = async (req, res) => {
    🔔 إشعارات المستخدم
 ====================================================== */
 
-/**
- * 🔹 جلب إشعارات مستخدم معين (تشمل broadcast)
- */
 exports.getUserNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -284,9 +281,6 @@ exports.getUserNotifications = async (req, res) => {
   }
 };
 
-/**
- * 🔹 تعليم إشعار كمقروء
- */
 exports.markNotificationAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -311,9 +305,6 @@ exports.markNotificationAsRead = async (req, res) => {
   }
 };
 
-/**
- * 🔹 حذف إشعار
- */
 exports.deleteNotification = async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -334,9 +325,6 @@ exports.deleteNotification = async (req, res) => {
    🛠️ دوال المدير (Admin)
 ====================================================== */
 
-/**
- * 👑 جلب جميع المستخدمين
- */
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find()
@@ -357,8 +345,27 @@ exports.getAllUsers = async (req, res) => {
 };
 
 /**
- * 🚫 حظر / تفعيل مستخدم
+ * 🔹 جلب كل المستخدمين مع كل بيانات الملف الشخصي، العناوين، الكارت
  */
+exports.getAllUsersWithProfile = async (req, res) => {
+  try {
+    const users = await User.find()
+      .populate("addresses")
+      .populate("cart")
+      .populate("completeProfile")
+      .select("-__v");
+
+    res.json({
+      success: true,
+      message: "تم جلب جميع المستخدمين مع بيانات الملف الشخصي",
+      users,
+    });
+  } catch (err) {
+    console.error("❌ Get Users With Profile Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.toggleUserStatus = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -389,9 +396,6 @@ exports.toggleUserStatus = async (req, res) => {
   }
 };
 
-/**
- * 🗑️ حذف مستخدم بالكامل
- */
 exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;

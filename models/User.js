@@ -1,63 +1,86 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-const UserSchema = new mongoose.Schema({
-  // 📱 معلومات الاتصال
-  phone: { type: String, required: true, unique: true },
-  phoneVerification: { type: Boolean, default: false },
+const UserSchema = new mongoose.Schema(
+  {
+    // 👥 نوع المستخدم
+    userType: {
+      type: String,
+      default: "Client",
+      enum: ["Client", "Admin", "Driver"],
+    },
 
-  // 👥 نوع المستخدم
-  userType: { 
-    type: String, 
-    default: "Client", 
-    enum: ["Client", "Admin", "Vendor", "Driver"] 
+    // 📱 رقم الجوال (إجباري للعملاء والسائقين)
+    phone: { type: String, unique: true, sparse: true },
+    phoneVerification: { type: Boolean, default: false },
+
+    // 📧 البريد الإلكتروني (إجباري للأدمن)
+    email: { type: String, trim: true, unique: true, sparse: true },
+
+    // 🔑 كلمة المرور (للأدمن فقط)
+    password: { type: String, default: null, select: false },
+
+    // 🖼️ الصورة الشخصية
+    profile: {
+      type: String,
+      default: "https://a.top4top.io/p_356432nv81.png",
+    },
+
+    // 🏷️ بيانات إضافية
+    name: { type: String, default: "" },
+    fcm: { type: String, default: "" },
+    isActive: { type: Boolean, default: true },
+    bannedReason: { type: String, default: "" },
+    lastLogin: { type: Date, default: null },
+
+    // 🏠 العناوين
+    addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Address" }],
+    defaultAddress: { type: mongoose.Schema.Types.ObjectId, ref: "Address", default: null },
+
+    // 🛒 السلة والطلبات
+    cart: { type: mongoose.Schema.Types.ObjectId, ref: "Cart", default: null },
+    orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
+
+    // 🏢 الملف التعريفي (للشركات أو البائعين)
+    completeProfile: { type: mongoose.Schema.Types.ObjectId, ref: "CompleteProfile", default: null },
+
+    // 🔔 الإشعارات
+    notifications: [{ type: mongoose.Schema.Types.ObjectId, ref: "Notification" }],
   },
+  { timestamps: true }
+);
 
-  // 🖼️ الصورة الشخصية
-  profile: { 
-    type: String, 
-    default: "https://a.top4top.io/p_356432nv81.png" 
-  },
+//
+// 🔒 تشفير كلمة المرور قبل الحفظ
+//
+UserSchema.pre("save", async function (next) {
+  // تشفير الباسورد فقط عند التعديل أو الإضافة
+  if (this.isModified("password") && this.password) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  }
 
-  // 🏷️ بيانات إضافية
-  name: { type: String, default: "" },
-  email: { type: String, default: "", trim: true },
-  fcm: { type: String, default: "" }, // 🔔 إشعارات Firebase
-  isActive: { type: Boolean, default: true }, // ✅ تفعيل/حظر المستخدم
-  bannedReason: { type: String, default: "" }, // ❗ سبب الحظر (اختياري)
-  lastLogin: { type: Date, default: null }, // 🕓 آخر تسجيل دخول
-
-  // 🏠 العناوين
-  addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Address" }],
-  defaultAddress: { type: mongoose.Schema.Types.ObjectId, ref: "Address", default: null },
-
-  // 🛒 السلة والطلبات
-  cart: { type: mongoose.Schema.Types.ObjectId, ref: "Cart", default: null },
-  orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
-
-  // 🏢 الملف التعريفي (للشركات أو البائعين)
-  completeProfile: { type: mongoose.Schema.Types.ObjectId, ref: "CompleteProfile", default: null },
-
-  // 🔔 الإشعارات المرتبطة بالمستخدم
-  notifications: [{ type: mongoose.Schema.Types.ObjectId, ref: "Notification" }],
-
-}, { timestamps: true });
-
-/**
- * 🔁 تحديث آخر تسجيل دخول عند التحقق من رقم الهاتف
- */
-UserSchema.pre("save", function(next) {
+  // تحديث آخر دخول بعد التحقق من رقم الهاتف
   if (this.isModified("phoneVerification") && this.phoneVerification) {
     this.lastLogin = new Date();
   }
+
   next();
 });
 
-/**
- * ⚡ فهارس لتحسين الأداء في الاستعلامات الكبيرة
- */
+//
+// 🧠 دالة لمقارنة الباسورد عند تسجيل الدخول
+//
+UserSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+//
+// ⚡ تحسين الأداء بالفهارس
+//
 UserSchema.index({ phone: 1 });
+UserSchema.index({ email: 1 });
 UserSchema.index({ userType: 1 });
-UserSchema.index({ isActive: 1 });
 UserSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("User", UserSchema);

@@ -1,120 +1,72 @@
-// const CompanyProfile = require('../models/CompanyProfile');
-// const User = require('../models/User');
-
-// exports.createProfile = async (req, res) => {
-//   try {
-//     const userId = req.user.id; // يجي من التوكن بعد تسجيل الدخول
-//     const existingProfile = await CompanyProfile.findOne({ user: userId });
-//     if (existingProfile) {
-//       return res.status(400).json({ success: false, message: 'تم إنشاء الملف مسبقًا' });
-//     }
-
-//     const {
-//       companyName,
-//       email,
-//       commercialLicense,
-//       energyLicense,
-//       commercialRecord,
-//       taxNumber,
-//       nationalAddress,
-//       civilDefenseLicense
-//     } = req.body;
-
-//     const newProfile = new CompanyProfile({
-//       user: userId,
-//       companyName,
-//       email,
-//       commercialLicense,
-//       energyLicense,
-//       commercialRecord,
-//       taxNumber,
-//       nationalAddress,
-//       civilDefenseLicense
-//     });
-
-//     await newProfile.save();
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'تم حفظ الملف بنجاح',
-//       data: newProfile,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: 'حدث خطأ في الخادم' });
-//   }
-// };
-
-// exports.getProfile = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const profile = await CompanyProfile.findOne({ user: userId });
-//     if (!profile) {
-//       return res.status(404).json({ success: false, message: 'لم يتم العثور على الملف' });
-//     }
-//     res.status(200).json({ success: true, data: profile });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: 'خطأ في الخادم' });
-//   }
-// };
-
+// controllers/profileController.js
 const User = require('../models/User');
 const CompleteProfile = require('../models/CompleteProfile');
-const fs = require('fs');
-const path = require('path');
 
 /**
- * 🔹 رفع المستندات وإكمال الملف الشخصي
+ * 🔹 رفع الملفات وإكمال الملف الشخصي
  */
 exports.completeProfile = async (req, res) => {
   try {
-    const { userId, email } = req.body;
-    if (!userId || !email) {
-      return res.status(400).json({ success: false, message: 'الـ userId و email مطلوبان' });
+    const userId = req.body.userId; // يجب أن يرسل العميل userId أو تأخذه من التوكن
+    if (!userId) return res.status(400).json({ message: "UserId is required" });
+
+    // رفع الملفات
+    const files = {};
+    if (req.files) {
+      if (req.files['licenseBusiness']) files.licenseBusiness = req.files['licenseBusiness'][0].path;
+      if (req.files['licenseEnergy']) files.energyLicense = req.files['licenseEnergy'][0].path;
+      if (req.files['commercialRecord']) files.commercialRecord = req.files['commercialRecord'][0].path;
+      if (req.files['taxNumber']) files.taxNumber = req.files['taxNumber'][0].path;
+      if (req.files['nationalAddress']) files.nationalAddress = req.files['nationalAddress'][0].path;
+      if (req.files['civilDefense']) files.civilDefenseLicense = req.files['civilDefense'][0].path;
     }
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
-    }
+    // بيانات إضافية (مثال)
+    const { companyName, companyPhone, email } = req.body;
 
-    const files = req.files; // multer middleware
-    if (!files || Object.keys(files).length === 0) {
-      return res.status(400).json({ success: false, message: 'لم يتم رفع أي ملف' });
-    }
-
+    // إنشاء أو تعديل CompleteProfile
     let profile = await CompleteProfile.findOne({ user: userId });
     if (!profile) {
-      profile = new CompleteProfile({ user: userId, email, documents: {} });
+      profile = new CompleteProfile({
+        user: userId,
+        ...files,
+        companyName,
+        companyPhone,
+        email,
+      });
     } else {
-      profile.email = email;
-    }
-
-    const docKeys = {
-      licenseBusiness: 'رخصة النشاط التجاري',
-      licenseEnergy: 'رخصة وزارة الطاقة',
-      commercialRecord: 'السجل التجاري',
-      taxNumber: 'الرقم الضريبي',
-      nationalAddress: 'العنوان الوطني للمنشأة',
-      civilDefense: 'رخصة الدفاع المدني',
-    };
-
-    for (const [key, label] of Object.entries(docKeys)) {
-      if (files[label]) {
-        profile.documents[key] = files[label][0].path; 
-      }
+      Object.assign(profile, files, { companyName, companyPhone, email });
     }
 
     await profile.save();
 
-    res.json({
+    // ربطه بالمستخدم
+    await User.findByIdAndUpdate(userId, { completeProfile: profile._id });
+
+    res.status(200).json({ success: true, message: "Profile completed", profile });
+  } catch (err) {
+    console.error("❌ Complete Profile Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/**
+ * 🔹 جلب كل ملفات CompleteProfile مع بيانات المستخدم
+ */
+exports.getAllCompleteProfiles = async (req, res) => {
+  try {
+    const profiles = await CompleteProfile.find()
+      .populate('user', 'phone userType') // هنا نعرض بيانات المستخدم المرتبط
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
       success: true,
-      message: 'تم رفع المستندات وإكمال الملف الشخصي بنجاح',
-      redirect: 'MainScreen',
-      profile,
+      message: "تم جلب جميع ملفات المستخدمين بنجاح",
+      profiles,
     });
   } catch (err) {
-    console.error('❌ CompleteProfile Error:', err);
+    console.error("❌ Get All CompleteProfiles Error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

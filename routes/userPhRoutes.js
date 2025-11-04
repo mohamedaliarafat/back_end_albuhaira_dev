@@ -12,6 +12,7 @@ const {
   markNotificationAsRead,
   deleteNotification,
 } = require("../controllers/userPhController");
+const { verifyAdmin } = require("../middleware/verifyToken"); // حماية مسارات الأدمن
 
 // ===============================
 // 📱 تسجيل الدخول والتحقق عبر OTP
@@ -43,12 +44,15 @@ router.delete("/notifications/:notificationId", deleteNotification);
 // ===============================
 
 // 👥 جلب جميع المستخدمين (Dashboard)
-router.get("/admin/users", getAllUsers);
+router.get("/admin/users", verifyAdmin, getAllUsers);
+
+// 👑 جلب جميع المستخدمين مع كل بيانات الملف الشخصي والعناوين والكارت
+
 
 // 🔒 تفعيل / تعطيل مستخدم (حظر)
-router.put("/admin/user/:userId/toggle", toggleUserStatus);
+router.put("/admin/user/:userId/toggle", verifyAdmin, toggleUserStatus);
 
 // 🗑️ حذف مستخدم
-router.delete("/admin/user/:userId", deleteUser);
+router.delete("/admin/user/:userId", verifyAdmin, deleteUser);
 
 module.exports = router;
