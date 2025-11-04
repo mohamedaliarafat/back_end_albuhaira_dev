@@ -15,8 +15,8 @@ async function createAdmin() {
     // 🔹 بيانات الأدمن
     const adminData = {
       name: "Super Admin",
-      email: "admin@arafat.com", // ✏️ غيّر الإيميل كما تريد
-      password: "123456", // ✏️ غيّر الباسورد
+      email: "mohamedaliarafat21@gmail.com", // ✏️ غيّر الإيميل كما تريد
+      password: "Mohamed2023", // ✏️ غيّر الباسورد
       userType: "Admin",
       phone: "+966510480939", // رقم شكلي فقط لأن الحقل مطلوب أحياناً
     };
