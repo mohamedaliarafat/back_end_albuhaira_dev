@@ -57,7 +57,7 @@ app.use("/api/auth", UserPhRoutes);
 app.use("/api/company-profile", completeProfileRoutes);
 app.use("/api/petrol", PetrolRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use("/api/admin", adminFirebaseRoute);
+app.use("/api/admin/firebase", adminFirebaseRoute);
 
 
 // ✅ اختبار سريع

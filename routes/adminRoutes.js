@@ -1,3 +1,4 @@
+// routes/adminRoutes.js
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
@@ -26,13 +27,37 @@ router.get("/users", verifyPhone, verifyAdmin, async (req, res) => {
 });
 
 // ===============================
+// 📋 جلب كل المستخدمين مع بيانات Profile (خاص بالأدمن فقط)
+// ===============================
+router.get("/users-with-profile", verifyPhone, verifyAdmin, async (req, res) => {
+  try {
+    // إذا لديك علاقة Profile في الـ schema
+    const users = await User.find()
+      .sort({ createdAt: -1 })
+      .populate("profile"); // عدّل "profile" حسب اسم الحقل في الـ schema
+
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching users with profile:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب المستخدمين مع Profile",
+      error: error.message,
+    });
+  }
+});
+
+// ===============================
 // 🗑 حذف مستخدم — أدمن فقط
 // ===============================
 router.delete("/users/:id", verifyPhone, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ✅ التحقق من صحة الـ ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: "ID غير صالح" });
     }
@@ -40,8 +65,6 @@ router.delete("/users/:id", verifyPhone, verifyAdmin, async (req, res) => {
     const user = await User.findByIdAndDelete(id);
     if (!user)
       return res.status(404).json({ success: false, message: "المستخدم غير موجود" });
-
-    // ⚠️ هنا يمكن إضافة حذف ملفات Profile أو العناوين المرتبطة باليوزر
 
     res.status(200).json({ success: true, message: "تم حذف المستخدم بنجاح" });
   } catch (error) {
@@ -55,19 +78,17 @@ router.delete("/users/:id", verifyPhone, verifyAdmin, async (req, res) => {
 });
 
 // ===============================
-// 🧩 تعديل نوع المستخدم (مثلاً تحويله إلى أدمن)
+// 🧩 تعديل نوع المستخدم (مثلاً Client / Admin / Vendor / Driver)
 // ===============================
 router.put("/users/:id/role", verifyPhone, verifyAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { userType } = req.body;
 
-    // ✅ التحقق من صحة الـ ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: "ID غير صالح" });
     }
 
-    // ✅ التأكد من أن نوع المستخدم صالح
     const allowedRoles = ["Client", "Vendor", "Admin", "Driver"];
     if (!allowedRoles.includes(userType)) {
       return res.status(400).json({ success: false, message: "نوع مستخدم غير صالح" });
@@ -87,6 +108,40 @@ router.put("/users/:id/role", verifyPhone, verifyAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تعديل نوع المستخدم",
+      error: error.message,
+    });
+  }
+});
+
+// ===============================
+// 🔄 تغيير حالة المستخدم (active / blocked)
+// ===============================
+router.put("/users/:id/toggle", verifyPhone, verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "ID غير صالح" });
+    }
+
+    const user = await User.findById(id);
+    if (!user)
+      return res.status(404).json({ success: false, message: "المستخدم غير موجود" });
+
+    const newStatus = user.status === "active" ? "blocked" : "active";
+    user.status = newStatus;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `تم تغيير حالة المستخدم إلى "${newStatus}"`,
+      user,
+    });
+  } catch (error) {
+    console.error("❌ Error toggling user status:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء تغيير حالة المستخدم",
       error: error.message,
     });
   }
