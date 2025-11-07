@@ -22,6 +22,9 @@ const notificationSchema = new mongoose.Schema({
     default: false 
   },
 
+  // نوع الإشعار (system, login, admin, address, order, etc.)
+  type: { type: String, default: "system" },
+
   meta: {
     type: mongoose.Schema.Types.Mixed,
     default: {}
@@ -39,9 +42,8 @@ const notificationSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-// فهارس لتحسين السرعة
 notificationSchema.index({ createdAt: -1 });
 notificationSchema.index({ user: 1 });
 notificationSchema.index({ broadcast: 1 });
 
-module.exports = mongoose.model('Notification', notificationSchema);
+module.exports = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
