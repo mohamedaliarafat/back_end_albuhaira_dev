@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  body: { type: String, required: true },
+
+  // ✅ body لم يعد required — أصبح اختياري لحل مشكلة OTP
+  body: { type: String, required: false, default: "" },
 
   // لو الإشعار موجه لمستخدم معين
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -17,7 +19,6 @@ const notificationSchema = new mongoose.Schema({
   },
 
   // حالة المقروئية للمستخدم (للـ user المحدد) أو تجاه عدة مستخدمين
-  // نستخدم مصفوفة للاحتفاظ بحالة المقروئية لكل مستخدم في حال broadcast
   readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
   // خيار إرسال فوري عبر FCM (لا يؤثر في قاعدة البيانات)
@@ -25,4 +26,6 @@ const notificationSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);
+module.exports =
+  mongoose.models.Notification ||
+  mongoose.model('Notification', notificationSchema);
