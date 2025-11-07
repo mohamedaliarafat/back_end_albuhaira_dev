@@ -28,7 +28,7 @@ exports.requestOtp = async (req, res) => {
 };
 
 /* ======================================================
-   🔹 التحقق من OTP + تسجيل الدخول (بدون إشعارات)
+   🔹 التحقق من OTP + تسجيل الدخول
 ====================================================== */
 exports.verifyOtpAndLogin = async (req, res) => {
   const { phone, otp } = req.body;
@@ -48,7 +48,7 @@ exports.verifyOtpAndLogin = async (req, res) => {
 
     let user = await User.findOne({ phone });
 
-    /* 🚀 إنشاء مستخدم جديد */
+    /* ✅ إنشاء مستخدم جديد */
     if (!user) {
       user = await User.create({
         phone,
@@ -60,15 +60,14 @@ exports.verifyOtpAndLogin = async (req, res) => {
 
       const completeProfile = await CompleteProfile.create({
         user: user._id,
+        companyName: "",
         email: "",
-        documents: {
-          licenseBusiness: "",
-          licenseEnergy: "",
-          commercialRecord: "",
-          taxNumber: "",
-          nationalAddress: "",
-          civilDefense: "",
-        },
+        commercialLicense: "",
+        energyLicense: "",
+        commercialRecord: "",
+        taxNumber: "",
+        nationalAddress: "",
+        civilDefenseLicense: "",
       });
 
       user.cart = cart._id;
@@ -91,22 +90,21 @@ exports.verifyOtpAndLogin = async (req, res) => {
       if (!profile) {
         profile = await CompleteProfile.create({
           user: user._id,
+          companyName: "",
           email: "",
-          documents: {
-            licenseBusiness: "",
-            licenseEnergy: "",
-            commercialRecord: "",
-            taxNumber: "",
-            nationalAddress: "",
-            civilDefense: "",
-          },
+          commercialLicense: "",
+          energyLicense: "",
+          commercialRecord: "",
+          taxNumber: "",
+          nationalAddress: "",
+          civilDefenseLicense: "",
         });
         user.completeProfile = profile._id;
         await user.save();
       }
     }
 
-    /* 🎟️ إنشاء التوكن */
+    /* ✅ التوكن */
     const token = jwt.sign(
       { id: user._id, phone: user.phone, userType: user.userType },
       process.env.JWT_SECRET,
@@ -197,12 +195,17 @@ exports.addAddress = async (req, res) => {
     if (!user)
       return res.status(404).json({ success: false, message: "المستخدم غير موجود" });
 
-    const profile = await CompleteProfile.findById(user.completeProfile);
+    const profile = await CompleteProfile.findOne({ user: userId });
 
     const isProfileCompleted =
       profile &&
       profile.email &&
-      Object.values(profile.documents).every((doc) => doc);
+      profile.commercialLicense &&
+      profile.energyLicense &&
+      profile.commercialRecord &&
+      profile.taxNumber &&
+      profile.nationalAddress &&
+      profile.civilDefenseLicense;
 
     if (!isProfileCompleted) {
       return res.status(403).json({
@@ -244,24 +247,8 @@ exports.addAddress = async (req, res) => {
   }
 };
 
-exports.getUserAddresses = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const addresses = await Address.find({ userId });
-
-    res.json({
-      success: true,
-      message: "تم جلب العناوين بنجاح ✅",
-      addresses,
-    });
-  } catch (err) {
-    console.error("❌ Get Addresses Error:", err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
 /* ======================================================
-   🔔 إدارة الإشعارات (بدون إشعارات تسجيل الدخول)
+   🔔 الإشعارات
 ====================================================== */
 exports.getUserNotifications = async (req, res) => {
   try {
