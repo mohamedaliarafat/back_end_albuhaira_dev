@@ -76,12 +76,12 @@ exports.verifyOtpAndLogin = async (req, res) => {
       await user.save();
 
       // إشعار الترحيب
-      const notif = await Notification.create({
-  user: user._id,
-  title: "تسجيل دخول ناجح ✅",
-  body: "تم تسجيل دخولك إلى حسابك بنجاح.",
-  broadcast: false,
-});
+//       const notif = await Notification.create({
+//   user: user._id,
+//   title: "تسجيل دخول ناجح ✅",
+//   body: "تم تسجيل دخولك إلى حسابك بنجاح.",
+//   broadcast: false,
+// });
 
 
       user.notifications = user.notifications || [];
