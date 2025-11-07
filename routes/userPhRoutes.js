@@ -14,7 +14,7 @@ const {
   deleteNotification,
 } = require("../controllers/userPhController");
 
-const { verifyAdmin } = require("../middleware/verifyToken");
+const { verifyPhone, verifyAdmin } = require("../middleware/verifyToken");
 
 // ===============================
 // 📱 تسجيل الدخول والتحقق عبر OTP
@@ -25,33 +25,22 @@ router.post("/verify-otp", verifyOtpAndLogin);
 // ===============================
 // 🏠 إدارة العناوين
 // ===============================
-router.post("/add-address", addAddress);
-router.get("/addresses/:userId", getUserAddresses);
+// ✅ لازم verifyPhone لضمان اليوزر
+router.post("/add-address", verifyPhone, addAddress);
+router.get("/addresses/:userId", verifyPhone, getUserAddresses);
 
 // ===============================
 // 🔔 نظام الإشعارات
 // ===============================
-
-// 📬 جلب إشعارات المستخدم
-router.get("/notifications/:userId", getUserNotifications);
-
-// ✅ تعليم الإشعار كمقروء
-router.put("/notifications/read/:notificationId", markNotificationAsRead);
-
-// ❌ حذف إشعار
-router.delete("/notifications/:notificationId", deleteNotification);
+router.get("/notifications/:userId", verifyPhone, getUserNotifications);
+router.put("/notifications/read/:notificationId", verifyPhone, markNotificationAsRead);
+router.delete("/notifications/:notificationId", verifyPhone, deleteNotification);
 
 // ===============================
 // 🛡️ صلاحيات الأدمن
 // ===============================
-
-// 👥 جلب جميع المستخدمين
-router.get("/admin/users", verifyAdmin, getAllUsers);
-
-// 🔒 تفعيل / تعطيل مستخدم
-router.put("/admin/user/:userId/toggle", verifyAdmin, toggleUserStatus);
-
-// 🗑️ حذف مستخدم
-router.delete("/admin/user/:userId", verifyAdmin, deleteUser);
+router.get("/admin/users", verifyPhone, verifyAdmin, getAllUsers);
+router.put("/admin/user/:userId/toggle", verifyPhone, verifyAdmin, toggleUserStatus);
+router.delete("/admin/user/:userId", verifyPhone, verifyAdmin, deleteUser);
 
 module.exports = router;
