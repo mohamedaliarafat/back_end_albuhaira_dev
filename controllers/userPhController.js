@@ -223,6 +223,7 @@ exports.addAddress = async (req, res) => {
     user.addresses.push(newAddress._id);
     if (isDefault) user.defaultAddress = newAddress._id;
     await user.save();
+     
 
     res.json({
       success: true,
@@ -231,6 +232,22 @@ exports.addAddress = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Add Address Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+exports.getUserAddresses = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const addresses = await Address.find({ userId }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      message: "تم جلب العناوين بنجاح ✅",
+      addresses,
+    });
+  } catch (err) {
+    console.error("❌ Get User Addresses Error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
