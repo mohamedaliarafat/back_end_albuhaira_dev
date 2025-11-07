@@ -5,13 +5,12 @@ const {
   requestOtp,
   verifyOtpAndLogin,
   addAddress,
-  getUserAddresses,
-  getAllUsers,
-  toggleUserStatus,
-  deleteUser,
   getUserNotifications,
   markNotificationAsRead,
   deleteNotification,
+  getAllUsers,
+  toggleUserStatus,
+  deleteUser,
 } = require("../controllers/userPhController");
 
 const { verifyPhone, verifyAdmin } = require("../middleware/verifyToken");
@@ -25,9 +24,8 @@ router.post("/verify-otp", verifyOtpAndLogin);
 // ===============================
 // 🏠 إدارة العناوين
 // ===============================
-// ✅ لازم verifyPhone لضمان اليوزر
+// يجب على المستخدم التحقق من الهاتف أولاً
 router.post("/add-address", verifyPhone, addAddress);
-router.get("/addresses/:userId", verifyPhone, getUserAddresses);
 
 // ===============================
 // 🔔 نظام الإشعارات
