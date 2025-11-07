@@ -9,6 +9,17 @@ const completeProfileSchema = new mongoose.Schema({
   },
   companyName: { type: String, default: "" },
   email: { type: String, default: "" },
+
+  // المستندات التي الكونترولر يملأها
+  documents: {
+    licenseBusiness: { type: String, default: "" },
+    licenseEnergy: { type: String, default: "" },
+    commercialRecord: { type: String, default: "" },
+    taxNumber: { type: String, default: "" },
+    nationalAddress: { type: String, default: "" },
+    civilDefense: { type: String, default: "" },
+  },
+
   commercialLicense: { type: String, default: "" },
   energyLicense: { type: String, default: "" },
   commercialRecord: { type: String, default: "" },
@@ -17,4 +28,4 @@ const completeProfileSchema = new mongoose.Schema({
   civilDefenseLicense: { type: String, default: "" },
 }, { timestamps: true });
 
-module.exports = mongoose.model('CompleteProfile', completeProfileSchema);
+module.exports = mongoose.models.CompleteProfile || mongoose.model('CompleteProfile', completeProfileSchema);
