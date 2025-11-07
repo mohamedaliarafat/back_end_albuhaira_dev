@@ -1,9 +1,9 @@
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 
-/**
- * 🔹 جلب إشعارات مستخدم معين (تشمل broadcast)
- */
+/* ------------------------------------------------------------
+ ✅ 1) جلب إشعارات مستخدم معين (تشمل broadcast)
+------------------------------------------------------------- */
 exports.getUserNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -15,30 +15,31 @@ exports.getUserNotifications = async (req, res) => {
       ]
     })
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(100)
       .lean();
 
-    // نحدد حالة القراءة لكل إشعار
-    const userNotifications = notifications.map((notif) => ({
-      ...notif,
-      isRead: notif.readBy?.some(id => id.toString() === userId) || false,
+    // تحديد حالة القراءة
+    const formatted = notifications.map((n) => ({
+      ...n,
+      isRead: n.readBy?.includes(userId) || false,
     }));
 
     res.json({
       success: true,
       message: "تم جلب الإشعارات بنجاح ✅",
-      count: userNotifications.length,
-      notifications: userNotifications,
+      count: formatted.length,
+      notifications: formatted,
     });
+
   } catch (err) {
     console.error("❌ Get User Notifications Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب الإشعارات" });
   }
 };
 
-/**
- * 🔹 وضع كل الإشعارات كمقروءة للمستخدم
- */
+/* ------------------------------------------------------------
+ ✅ 2) وضع كل الإشعارات كمقروءة
+------------------------------------------------------------- */
 exports.markAllAsRead = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -47,9 +48,9 @@ exports.markAllAsRead = async (req, res) => {
       {
         $or: [
           { user: userId },
-          { broadcast: true }
+          { broadcast: true },
         ],
-        readBy: { $ne: userId }
+        readBy: { $ne: userId },
       },
       { $addToSet: { readBy: userId } }
     );
@@ -58,29 +59,34 @@ exports.markAllAsRead = async (req, res) => {
       success: true,
       message: "تم تحديد كل الإشعارات كمقروءة 📩",
     });
+
   } catch (err) {
-    console.error("❌ Mark As Read Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("❌ Mark All As Read Error:", err);
+    res.status(500).json({ success: false, message: "حدث خطأ أثناء التحديث" });
   }
 };
 
-/**
- * 🔹 إنشاء إشعار جديد (مخصص أو عام)
- */
+/* ------------------------------------------------------------
+ ✅ 3) إنشاء إشعار جديد (مستخدم معين / عام)
+------------------------------------------------------------- */
 exports.createNotification = async (req, res) => {
   try {
     const { userId, title, body, broadcast = false, meta = {} } = req.body;
 
+    // ✅ تحقق من الحقول المطلوبة
     if (!title || !body) {
-      return res
-        .status(400)
-        .json({ success: false, message: "الحقول المطلوبة: العنوان والنص" });
+      return res.status(400).json({
+        success: false,
+        message: "الحقول المطلوبة: العنوان والنص",
+      });
     }
 
+    // ✅ إذا الإشعار ليس broadcast، يجب وجود userId
     if (!broadcast && !userId) {
-      return res
-        .status(400)
-        .json({ success: false, message: "يجب تحديد المستخدم إذا لم يكن الإشعار عامًا" });
+      return res.status(400).json({
+        success: false,
+        message: "يجب تحديد المستخدم إذا لم يكن الإشعار عامًا",
+      });
     }
 
     const notification = await Notification.create({
@@ -91,6 +97,13 @@ exports.createNotification = async (req, res) => {
       meta,
     });
 
+    // ✅ إذا كان الإشعار لمستخدم معين — نربطه به
+    if (!broadcast) {
+      await User.findByIdAndUpdate(userId, {
+        $push: { notifications: notification._id }
+      });
+    }
+
     res.json({
       success: true,
       message: broadcast
@@ -98,19 +111,22 @@ exports.createNotification = async (req, res) => {
         : "تم إرسال إشعار للمستخدم بنجاح ✅",
       notification,
     });
+
   } catch (err) {
     console.error("❌ Create Notification Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false, message: "حدث خطأ أثناء إنشاء الإشعار"
+    });
   }
 };
 
-/**
- * 🔹 جلب كل الإشعارات (للأدمن فقط)
- */
+/* ------------------------------------------------------------
+ ✅ 4) جلب كل الإشعارات (للأدمن)
+------------------------------------------------------------- */
 exports.getAllNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find()
-      .populate("user", "phone userType")
+      .populate("user", "phone userType name")
       .sort({ createdAt: -1 });
 
     res.json({
@@ -119,8 +135,12 @@ exports.getAllNotifications = async (req, res) => {
       count: notifications.length,
       notifications,
     });
+
   } catch (err) {
     console.error("❌ Get All Notifications Error:", err);
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب جميع الإشعارات"
+    });
   }
 };
