@@ -4,7 +4,7 @@ const orderItemSchema = new mongoose.Schema({
     foodId: { type: mongoose.Schema.Types.ObjectId, ref: 'Food' },
     quantity: { type: Number, default: 1 },
     price: { type: Number, required: true },
-    additives: { type: Array, default: [] },
+    additives: { type: [String], default: [] },
     instructions: { type: String, default: "" }
 });
 
@@ -19,10 +19,10 @@ const OrderSchema = new mongoose.Schema({
     paymentMethod: { type: String, default: "Bank Transfer" },
     paymentStatus: { type: String, default: 'Pending', enum: ['Pending', 'Completed', 'Failed'] },
     orderStatus: { 
-  type: String, 
-  default: 'In-Review', // بدل 'Pending' بعد الدفع
-  enum: ['In-Review', 'Placed', 'Accepted', 'Preparing', 'Delivered', 'Cancelled', 'Ready', 'Out_for_Delivery'] 
-},
+      type: String, 
+      default: 'In-Review', 
+      enum: ['In-Review', 'Placed', 'Accepted', 'Preparing', 'Delivered', 'Cancelled', 'Ready', 'Out_for_Delivery'] 
+    },
     restaurantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: false },
     restaurantCoords: { type: [Number], default: [] },
     recipintCoords: { type: [Number], default: [] },
@@ -34,4 +34,4 @@ const OrderSchema = new mongoose.Schema({
     notes: { type: String, default: "" },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Order', OrderSchema);
+module.exports = mongoose.models.Order || mongoose.model('Order', OrderSchema);
