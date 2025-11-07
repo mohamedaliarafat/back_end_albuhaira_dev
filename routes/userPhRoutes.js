@@ -1,19 +1,20 @@
 const express = require("express");
 const router = express.Router();
+
 const {
   requestOtp,
   verifyOtpAndLogin,
   addAddress,
   getUserAddresses,
   getAllUsers,
-  getAllUsersWithProfile, // ← أضفنا هذه الدالة الجديدة
   toggleUserStatus,
   deleteUser,
   getUserNotifications,
   markNotificationAsRead,
   deleteNotification,
 } = require("../controllers/userPhController");
-const { verifyAdmin } = require("../middleware/verifyToken"); // حماية مسارات الأدمن
+
+const { verifyAdmin } = require("../middleware/verifyToken");
 
 // ===============================
 // 📱 تسجيل الدخول والتحقق عبر OTP
@@ -44,13 +45,10 @@ router.delete("/notifications/:notificationId", deleteNotification);
 // 🛡️ صلاحيات الأدمن
 // ===============================
 
-// 👥 جلب جميع المستخدمين (Dashboard)
+// 👥 جلب جميع المستخدمين
 router.get("/admin/users", verifyAdmin, getAllUsers);
 
-// 👑 جلب جميع المستخدمين مع كل بيانات الملف الشخصي والعناوين والكارت
-router.get("/admin/users-with-profile", verifyAdmin, getAllUsersWithProfile);
-
-// 🔒 تفعيل / تعطيل مستخدم (حظر)
+// 🔒 تفعيل / تعطيل مستخدم
 router.put("/admin/user/:userId/toggle", verifyAdmin, toggleUserStatus);
 
 // 🗑️ حذف مستخدم
