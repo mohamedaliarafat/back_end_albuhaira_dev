@@ -3,7 +3,7 @@ const router = express.Router();
 
 const {
   requestOtp,
-  verifyOtpAndLogin,
+  verifyOtpOnly,        // تم تعديل الاسم ليتوافق مع controller
   addAddress,
   getUserNotifications,
   markNotificationAsRead,
@@ -19,7 +19,7 @@ const { verifyPhone, verifyAdmin } = require("../middleware/verifyToken");
 // 📱 تسجيل الدخول والتحقق عبر OTP
 // ===============================
 router.post("/request-otp", requestOtp);
-router.post("/verify-otp", verifyOtpAndLogin);
+router.post("/verify-otp", verifyOtpOnly);  // تم تعديل الاسم
 
 // ===============================
 // 🏠 إدارة العناوين
