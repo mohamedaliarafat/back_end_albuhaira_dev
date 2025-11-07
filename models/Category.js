@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
 const CategorySchema = new mongoose.Schema({
-    title: {type: String, require: true},
-    value: {type: String, require: true},
-    imageUrl: {type: String, require: true}
+  title: { type: String, required: true },
+  value: { type: String, required: true },
+  imageUrl: { type: String, required: true }
 });
 
-module.exports = mongoose.model('Category' , CategorySchema);
+module.exports = mongoose.models.Category || mongoose.model('Category' , CategorySchema);
