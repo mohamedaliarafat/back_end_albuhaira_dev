@@ -28,9 +28,9 @@ exports.requestOtp = async (req, res) => {
 };
 
 /* ======================================================
-   🔹 التحقق من OTP + تسجيل الدخول / إنشاء مستخدم جديد
+   🔹 التحقق من OTP فقط (دون إنشاء مستخدم)
 ====================================================== */
-exports.verifyOtpAndLogin = async (req, res) => {
+exports.verifyOtpOnly = async (req, res) => {
   const { phone, otp } = req.body;
 
   if (!phone || !otp)
@@ -41,64 +41,74 @@ exports.verifyOtpAndLogin = async (req, res) => {
     if (!isValid)
       return res.status(400).json({ success: false, message: "رمز التحقق غير صحيح أو منتهي" });
 
+    // توكن مؤقت فقط
+    const token = jwt.sign(
+      { phone, userType: "Client" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      message: "تم التحقق بنجاح ✅",
+      data: { phone, userType: "Client" },
+      token,
+    });
+  } catch (err) {
+    console.error("❌ OTP Verify Error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/* ======================================================
+   🔹 إنشاء مستخدم بعد إكمال الملف الشخصي
+====================================================== */
+exports.createUserAfterProfile = async (req, res) => {
+  const {
+    phone,
+    companyName,
+    email,
+    commercialLicense,
+    energyLicense,
+    commercialRecord,
+    taxNumber,
+    nationalAddress,
+    civilDefenseLicense,
+  } = req.body;
+
+  if (!phone)
+    return res.status(400).json({ success: false, message: "رقم الهاتف مطلوب" });
+
+  try {
     let user = await User.findOne({ phone });
+    if (user)
+      return res.status(400).json({ success: false, message: "المستخدم موجود مسبقاً" });
 
-    // إنشاء مستخدم جديد إذا لم يكن موجود
-    if (!user) {
-      user = await User.create({
-        phone,
-        phoneVerification: true,
-        userType: "Client",
-      });
+    user = await User.create({
+      phone,
+      phoneVerification: true,
+      userType: "Client",
+    });
 
-      const cart = await Cart.create({ userId: user._id });
+    const cart = await Cart.create({ userId: user._id });
 
-      const completeProfile = await CompleteProfile.create({
-        user: user._id,
-        companyName: "",
-        email: "",
-        commercialLicense: "",
-        energyLicense: "",
-        commercialRecord: "",
-        taxNumber: "",
-        nationalAddress: "",
-        civilDefenseLicense: "",
-      });
+    const completeProfile = await CompleteProfile.create({
+      user: user._id,
+      companyName: companyName || "",
+      email: email || "",
+      commercialLicense: commercialLicense || "",
+      energyLicense: energyLicense || "",
+      commercialRecord: commercialRecord || "",
+      taxNumber: taxNumber || "",
+      nationalAddress: nationalAddress || "",
+      civilDefenseLicense: civilDefenseLicense || "",
+    });
 
-      user.cart = cart._id;
-      user.completeProfile = completeProfile._id;
-      await user.save();
-    } else {
-      // مستخدم موجود، فقط تحديث حالة التحقق
-      user.phoneVerification = true;
-      await user.save();
+    user.cart = cart._id;
+    user.completeProfile = completeProfile._id;
+    await user.save();
 
-      // التأكد من وجود Cart وCompleteProfile
-      if (!user.cart) {
-        const cart = await Cart.create({ userId: user._id });
-        user.cart = cart._id;
-        await user.save();
-      }
-
-      let profile = await CompleteProfile.findOne({ user: user._id });
-      if (!profile) {
-        profile = await CompleteProfile.create({
-          user: user._id,
-          companyName: "",
-          email: "",
-          commercialLicense: "",
-          energyLicense: "",
-          commercialRecord: "",
-          taxNumber: "",
-          nationalAddress: "",
-          civilDefenseLicense: "",
-        });
-        user.completeProfile = profile._id;
-        await user.save();
-      }
-    }
-
-    // إنشاء التوكن
+    // إنشاء التوكن النهائي بعد إكمال الملف
     const token = jwt.sign(
       { id: user._id, phone: user.phone, userType: user.userType },
       process.env.JWT_SECRET,
@@ -114,12 +124,12 @@ exports.verifyOtpAndLogin = async (req, res) => {
 
     res.json({
       success: true,
-      message: "تم تسجيل الدخول بنجاح ✅",
+      message: "تم إنشاء المستخدم بنجاح ✅",
       data: user,
       token,
     });
   } catch (err) {
-    console.error("❌ OTP Login Error:", err);
+    console.error("❌ Create User Error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -223,7 +233,6 @@ exports.addAddress = async (req, res) => {
     user.addresses.push(newAddress._id);
     if (isDefault) user.defaultAddress = newAddress._id;
     await user.save();
-     
 
     res.json({
       success: true,
@@ -235,6 +244,7 @@ exports.addAddress = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 exports.getUserAddresses = async (req, res) => {
   try {
     const { userId } = req.params;
