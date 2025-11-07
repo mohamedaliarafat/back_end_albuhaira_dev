@@ -1,15 +1,11 @@
 const mongoose = require('mongoose');
 
 const petrolSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   fuelType: { type: String, required: true },
   fuelLiters: { type: Number, required: true },
-  notes: { type: String },
-  price: { type: Number },
+  notes: { type: String, default: "" },
+  price: { type: Number, default: 0 },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected', 'completed'],
@@ -17,5 +13,4 @@ const petrolSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// ✅ استخدم هذه الطريقة لتجنب الخطأ OverwriteModelError
-module.exports = mongoose.models.Order || mongoose.model('Petrol', petrolSchema);
+module.exports = mongoose.models.Petrol || mongoose.model('Petrol', petrolSchema);
