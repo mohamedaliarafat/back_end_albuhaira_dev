@@ -5,14 +5,15 @@ const multer = require('multer');
 
 const { 
   requestOtp, 
-  verifyOtpAndLogin, 
+  verifyOtpOnly,  // تم تعديل الاسم ليتوافق مع userPhController
   addAddress, 
   getUserAddresses 
 } = require('../controllers/userPhController');
 
 const { 
   completeProfile, 
-  getAllCompleteProfiles 
+  getAllCompleteProfiles,
+  getUserCompleteProfile
 } = require('../controllers/profileController');
 
 const { verifyPhone, verifyAdmin } = require('../middleware/verifyToken');
@@ -35,7 +36,7 @@ const upload = multer({ storage });
 // 📱 تسجيل الدخول والتحقق عبر OTP
 // ===============================
 router.post("/request-otp", requestOtp);
-router.post("/verify-otp", verifyOtpAndLogin);
+router.post("/verify-otp", verifyOtpOnly);  // تم تعديل الاسم
 
 // ===============================
 // 🏠 إدارة العناوين
@@ -65,5 +66,10 @@ router.post(
 // ===============================
 // جلب كل ملفات CompleteProfile مع بيانات المستخدم
 router.get("/admin/complete-profiles", verifyPhone, verifyAdmin, getAllCompleteProfiles);
+
+// ===============================
+// 👤 جلب ملف CompleteProfile لمستخدم محدد
+// ===============================
+router.get("/profile/:userId", verifyPhone, getUserCompleteProfile);
 
 module.exports = router;
