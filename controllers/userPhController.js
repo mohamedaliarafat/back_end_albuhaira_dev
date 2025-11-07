@@ -28,7 +28,7 @@ exports.requestOtp = async (req, res) => {
 };
 
 /* ======================================================
-   🔹 التحقق من OTP + تسجيل الدخول
+   🔹 التحقق من OTP + تسجيل الدخول (بدون إشعارات)
 ====================================================== */
 exports.verifyOtpAndLogin = async (req, res) => {
   const { phone, otp } = req.body;
@@ -74,19 +74,6 @@ exports.verifyOtpAndLogin = async (req, res) => {
       user.cart = cart._id;
       user.completeProfile = completeProfile._id;
       await user.save();
-
-      // إشعار الترحيب
-//       const notif = await Notification.create({
-//   user: user._id,
-//   title: "تسجيل دخول ناجح ✅",
-//   body: "تم تسجيل دخولك إلى حسابك بنجاح.",
-//   broadcast: false,
-// });
-
-
-      user.notifications = user.notifications || [];
-      user.notifications.push(notif._id);
-      await user.save();
     }
 
     /* ✅ مستخدم موجود */
@@ -117,18 +104,6 @@ exports.verifyOtpAndLogin = async (req, res) => {
         user.completeProfile = profile._id;
         await user.save();
       }
-
-      // إشعار تسجيل الدخول
-      const notif = await Notification.create({
-        user: user._id,
-        title: "تسجيل الدخول ✅",
-        body: "تم تسجيل دخولك بنجاح",
-        type: "login",
-      });
-
-      user.notifications = user.notifications || [];
-      user.notifications.push(notif._id);
-      await user.save();
     }
 
     /* 🎟️ إنشاء التوكن */
@@ -186,17 +161,6 @@ exports.adminLogin = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
-
-    const notif = await Notification.create({
-      user: user._id,
-      title: "تسجيل دخول الأدمن 👑",
-      body: "تم تسجيل الدخول بنجاح",
-      type: "admin",
-    });
-
-    user.notifications = user.notifications || [];
-    user.notifications.push(notif._id);
-    await user.save();
 
     res.json({
       success: true,
@@ -269,17 +233,6 @@ exports.addAddress = async (req, res) => {
     if (isDefault) user.defaultAddress = newAddress._id;
     await user.save();
 
-    const notif = await Notification.create({
-      user: user._id,
-      title: "عنوان جديد",
-      body: "تمت إضافة عنوان جديد إلى حسابك 🏠",
-      type: "address",
-    });
-
-    user.notifications = user.notifications || [];
-    user.notifications.push(notif._id);
-    await user.save();
-
     res.json({
       success: true,
       message: "تم إضافة العنوان بنجاح ✅",
@@ -308,7 +261,7 @@ exports.getUserAddresses = async (req, res) => {
 };
 
 /* ======================================================
-   🔔 إدارة الإشعارات
+   🔔 إدارة الإشعارات (بدون إشعارات تسجيل الدخول)
 ====================================================== */
 exports.getUserNotifications = async (req, res) => {
   try {
@@ -406,20 +359,6 @@ exports.toggleUserStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "المستخدم غير موجود" });
 
     user.isActive = !user.isActive;
-    await user.save();
-
-    // إشعار
-    const notif = await Notification.create({
-      user: user._id,
-      title: user.isActive ? "تم تفعيل حسابك ✅" : "تم إيقاف حسابك 🚫",
-      body: user.isActive
-        ? "يمكنك استخدام التطبيق الآن"
-        : "تم إيقاف حسابك من قبل الإدارة",
-      type: "admin",
-    });
-
-    user.notifications = user.notifications || [];
-    user.notifications.push(notif._id);
     await user.save();
 
     res.json({
