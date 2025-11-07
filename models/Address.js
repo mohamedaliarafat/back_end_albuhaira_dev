@@ -14,4 +14,4 @@ const AddressSchema = new mongoose.Schema({
   longitude: { type: Number, default: 0 },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Address', AddressSchema);
+module.exports = mongoose.models.Address || mongoose.model('Address', AddressSchema);
